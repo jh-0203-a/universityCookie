@@ -5,7 +5,6 @@
 import {useRef, useState, type ChangeEvent, type ReactNode} from 'react';
 import {ArrowLeft, Bell, ImagePlus, Plus, User} from 'lucide-react';
 import {REGION_TREE} from './regions';
-import {UNIVERSITIES} from './universities';
 import {REPORT_REASONS} from './types';
 import {useStore} from './data';
 import logoUrl from '../logo.png'; // 프로젝트 최상위의 로고 이미지
@@ -140,6 +139,12 @@ export function RegionSchoolPicker({
   );
   const sidoNode = REGION_TREE.find((s) => s.sido === sido);
 
+  // 선택한 권역(region)에 속한 학교만 학교 드롭다운에 보여줍니다. (권역을 골라야 학교가 채워짐)
+  const areaSchools = sidoNode?.areas.find((a) => a.region === region)?.schools ?? [];
+  const sortedSchools = [...areaSchools].sort((a, b) => a.localeCompare(b, 'ko'));
+  // 이미 고른 학교가 목록에 없으면(옛 데이터 등) 사라지지 않게 맨 앞에 끼워 둡니다.
+  const schoolOptions = school && !sortedSchools.includes(school) ? [school, ...sortedSchools] : sortedSchools;
+
   return (
     <div className="space-y-3">
       {lockRegion ? (
@@ -212,20 +217,21 @@ export function RegionSchoolPicker({
           </Field>
         </>
       )}
-      <Field label="졸업 학교">
-        {/* 전국 대학 검색/선택 (입력하면 자동완성) */}
-        <input
+      <Field label="학교">
+        {/* 선택한 권역의 학교만 골라서 선택 (권역을 먼저 고르면 채워집니다) */}
+        <select
           className={inputClass}
-          list="university-list"
           value={school}
+          disabled={!region}
           onChange={(e) => onChange(region, e.target.value)}
-          placeholder="학교 이름 검색 (예: 아주대학교)"
-        />
-        <datalist id="university-list">
-          {UNIVERSITIES.map((u) => (
-            <option key={u} value={u} />
+        >
+          <option value="">{region ? '학교를 선택하세요' : '권역을 먼저 선택하세요'}</option>
+          {schoolOptions.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
           ))}
-        </datalist>
+        </select>
       </Field>
     </div>
   );
