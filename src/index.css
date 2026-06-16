@@ -1,0 +1,15 @@
+/* Tailwind CSS v4 불러오기 (@tailwindcss/vite 플러그인 사용) */
+@import 'tailwindcss';
+
+/* 모바일 앱 느낌을 위해 기본 배경/폰트 설정 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  background-color: #f5f5f5;
+}

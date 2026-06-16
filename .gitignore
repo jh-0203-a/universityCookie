@@ -1,0 +1,16 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+# 로컬 임시/테스트 파일
+.server.out
+.server.err
+.vite.out
+.vite.err
+.smoketest.mjs
+.cleanup.mjs
+uploads/

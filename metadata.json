@@ -1,0 +1,6 @@
+{
+  "name": "청년와글",
+  "description": "대학 인증·지역 인증 배지를 기반으로 하는 20·30 청년 생활 플랫폼 — 커뮤니티·모임·스터디·중고거래·채팅",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
