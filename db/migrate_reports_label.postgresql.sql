@@ -15,4 +15,13 @@ ALTER TABLE verifications ADD COLUMN IF NOT EXISTS reject_reason VARCHAR(255);
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS post_id   BIGINT REFERENCES posts(id) ON DELETE CASCADE;
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS note_with VARCHAR(50);
 -- 더 이상 쓰지 않는 link 는 값이 없어도 되도록 NULL 허용으로 바꿉니다.
-ALTER TABLE notifications ALTER COLUMN link DROP NOT NULL;
+--  ※ 새로 만든 스키마에는 link 컬럼이 아예 없으므로, 컬럼이 있을 때만 실행합니다.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'link'
+  ) THEN
+    ALTER TABLE notifications ALTER COLUMN link DROP NOT NULL;
+  END IF;
+END $$;
