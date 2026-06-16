@@ -26,6 +26,7 @@ export const POPULAR_BOARD_MIN_POSTS = 3;
 export interface Comment {
   id: number;
   author: string; // 댓글 작성자 닉네임
+  authorAvatar?: string; // 작성자 프로필 사진 (익명이면 없음)
   body: string;
   createdAt: string;
   parentId?: number; // 답글이면 부모 댓글 id (없으면 최상위 댓글)
@@ -40,6 +41,7 @@ export interface Post {
   title: string;
   body: string;
   author: string; // 글쓴이 닉네임 (익명이면 '익명')
+  authorAvatar?: string; // 글쓴이 프로필 사진 (익명이면 없음)
   anonymous: boolean; // 익명 여부
   mine?: boolean; // 내가 쓴 글인지 (익명 글이라 author 로 못 알 때 서버가 판단해 줌)
   region: string;

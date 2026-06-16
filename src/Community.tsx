@@ -12,7 +12,7 @@ import {CommentThread} from './Comments';
 import {DEFAULT_BOARDS, POPULAR_BOARD_MIN_POSTS, type BoardType, type Post, type Report} from './types';
 import {REGION_TREE} from './regions';
 import {shortDistrict} from './districts';
-import {DangerButton, Empty, Fab, Field, GhostButton, MultiImagePicker, Page, PrimaryButton, ReportModal, VerifiedBadges, inputClass} from './ui';
+import {Avatar, DangerButton, Empty, Fab, Field, GhostButton, MultiImagePicker, Page, PrimaryButton, ReportModal, VerifiedBadges, inputClass} from './ui';
 
 // ----- 게시판 글 목록 -----
 export function CommunityScreen() {
@@ -308,6 +308,7 @@ export function CommunityScreen() {
             >
               <div className="mb-1 flex items-center gap-2 text-xs text-gray-400">
                 <span className="rounded bg-gray-100 px-1.5 py-0.5">{post.boardType}</span>
+                <Avatar src={post.authorAvatar} size={20} />
                 <span>
                   {post.anonymous ? '익명' : post.author}
                   {!post.anonymous && <VerifiedBadges nickname={post.author} />}
@@ -471,6 +472,7 @@ export function PostDetail({id}: {id: number}) {
         {/* 글 본문 */}
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs text-gray-400">
+            <Avatar src={post.authorAvatar} size={28} />
             <span>
               {post.anonymous ? '익명' : post.author}
               {!post.anonymous && <VerifiedBadges nickname={post.author} />}

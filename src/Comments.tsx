@@ -7,7 +7,7 @@
 import {Fragment, useState, type ReactNode} from 'react';
 import {CornerDownRight, Trash2} from 'lucide-react';
 import type {Comment} from './types';
-import {PrimaryButton, VerifiedBadges, inputClass} from './ui';
+import {Avatar, PrimaryButton, VerifiedBadges, inputClass} from './ui';
 
 export function CommentThread({
   comments,
@@ -49,9 +49,10 @@ export function CommentThread({
     const parentForReply = isReply ? c.parentId! : c.id;
     return (
       <div className={`flex items-start gap-2 rounded-lg p-3 ${isReply ? 'ml-5 bg-gray-100/80' : 'bg-gray-50'}`}>
+        {isReply && <CornerDownRight size={12} className="mt-1 flex-none text-gray-300" />}
+        <Avatar src={c.authorAvatar} size={isReply ? 24 : 28} />
         <div className="min-w-0 flex-1">
           <p className="flex items-center text-xs text-gray-400">
-            {isReply && <CornerDownRight size={12} className="mr-1 text-gray-300" />}
             {c.author}
             <VerifiedBadges nickname={c.author} /> · {c.createdAt}
           </p>

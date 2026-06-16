@@ -399,12 +399,12 @@ app.get('/api/posts', async (req, res) => {
   try {
     const posts = (
       await pool.query(
-        `SELECT p.*, u.nickname AS author_nick FROM posts p JOIN users u ON u.id = p.author_id ORDER BY p.created_at DESC`,
+        `SELECT p.*, u.nickname AS author_nick, u.avatar_url AS author_avatar FROM posts p JOIN users u ON u.id = p.author_id ORDER BY p.created_at DESC`,
       )
     ).rows;
     const images = (await pool.query('SELECT post_id, url FROM post_images ORDER BY sort')).rows;
     const comments = (
-      await pool.query(`SELECT c.*, u.nickname AS author_nick FROM comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`)
+      await pool.query(`SELECT c.*, u.nickname AS author_nick, u.avatar_url AS author_avatar FROM comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`)
     ).rows;
     const plikes = (await pool.query('SELECT post_id, user_id FROM post_likes')).rows;
     const clikes = (await pool.query('SELECT comment_id, user_id FROM comment_likes')).rows;
@@ -417,6 +417,8 @@ app.get('/api/posts', async (req, res) => {
       body: p.body,
       // 익명 게시판 글은 (anonymous 플래그와 무관하게) 항상 작성자를 '익명'으로 표시
       author: p.anonymous || p.board_type === '익명' ? '익명' : p.author_nick,
+      // 익명이면 프로필 사진도 숨김 (익명성 보호)
+      authorAvatar: p.anonymous || p.board_type === '익명' ? undefined : p.author_avatar || undefined,
       anonymous: p.anonymous || p.board_type === '익명',
       // 내 글인지 (익명이라 author 로는 알 수 없으므로 서버가 작성자 id 로 판단해 알려줌)
       mine: Number(p.author_id) === userId,
@@ -434,6 +436,7 @@ app.get('/api/posts', async (req, res) => {
           id: Number(c.id),
           // 익명 게시판 글의 댓글은 작성자를 '익명'으로 표시 (DB엔 실제 작성자 id 보관 — 신고/관리용)
           author: p.board_type === '익명' ? '익명' : c.author_nick,
+          authorAvatar: p.board_type === '익명' ? undefined : c.author_avatar || undefined,
           body: c.body,
           createdAt: fmtDate(c.created_at),
           parentId: c.parent_id ? Number(c.parent_id) : undefined, // 답글이면 부모 댓글 id
@@ -593,7 +596,7 @@ app.get('/api/meetups', async (req, res) => {
     // 모임 게시글 댓글 (답글 포함)
     const mcmts = (
       await pool.query(
-        `SELECT c.*, u.nickname AS author_nick FROM meetup_post_comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`,
+        `SELECT c.*, u.nickname AS author_nick, u.avatar_url AS author_avatar FROM meetup_post_comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`,
       )
     ).rows;
     const eq = (a, b) => String(a) === String(b);
@@ -604,6 +607,7 @@ app.get('/api/meetups', async (req, res) => {
         .map((c) => ({
           id: Number(c.id),
           author: c.author_nick,
+          authorAvatar: c.author_avatar || undefined,
           body: c.body,
           createdAt: fmtDate(c.created_at),
           parentId: c.parent_id ? Number(c.parent_id) : undefined,
@@ -873,7 +877,7 @@ app.get('/api/items', async (_req, res) => {
     const imgs = (await pool.query('SELECT item_id, url FROM item_images ORDER BY sort')).rows;
     const cmts = (
       await pool.query(
-        `SELECT c.*, u.nickname AS author_nick FROM item_comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`,
+        `SELECT c.*, u.nickname AS author_nick, u.avatar_url AS author_avatar FROM item_comments c JOIN users u ON u.id = c.author_id ORDER BY c.created_at`,
       )
     ).rows;
     const eq = (a, b) => String(a) === String(b);
@@ -894,6 +898,7 @@ app.get('/api/items', async (_req, res) => {
           .map((c) => ({
             id: Number(c.id),
             author: c.author_nick,
+            authorAvatar: c.author_avatar || undefined,
             body: c.body,
             createdAt: fmtDate(c.created_at),
             parentId: c.parent_id ? Number(c.parent_id) : undefined,
