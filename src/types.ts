@@ -223,6 +223,7 @@ export interface VerificationRequest {
   gradYear?: string;
   realName?: string; // 본인인증으로 확인된 실명 (지역 인증 심사 때 주민등록증과 대조)
   birth?: string; // 본인인증으로 확인된 생년월일 (예: '1999-03-15')
+  address?: string; // 가입 때 입력한 실거주지 주소 (지역 인증 때 주민등록증 주소와 대조)
   regionCity?: string; // 지역 인증 시 제출한 정확한 위치 (예: '경기도 수원시')
   cert: string; // 첨부 사진 (D:\Cookie_db\verification 에 저장될 이미지)
   status: '대기' | '승인' | '거절';

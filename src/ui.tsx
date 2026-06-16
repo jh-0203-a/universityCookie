@@ -182,7 +182,7 @@ export function RegionSchoolPicker({
         </div>
       ) : (
         <>
-          <Field label="거주 시/도">
+          <Field label="학교 시/도">
             <select
               className={inputClass}
               value={sido}
@@ -199,7 +199,7 @@ export function RegionSchoolPicker({
               ))}
             </select>
           </Field>
-          <Field label="거주 권역">
+          <Field label="학교 권역">
             <select
               className={inputClass}
               value={region}

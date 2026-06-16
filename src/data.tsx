@@ -82,6 +82,7 @@ function dbUserToMe(u: Record<string, unknown>): Store['me'] {
     avatar: (u.avatar_url as string) ?? undefined,
     phone: (u.phone as string) ?? undefined,
     birth: (u.birth as string) ?? undefined,
+    address: (u.address as string) ?? undefined,
   };
 }
 
@@ -100,7 +101,7 @@ interface Store {
   notes: Note[]; // 쪽지함 (주고받은 쪽지)
   openRooms: OpenRoom[]; // 둘러보기: 참여할 수 있는 목적 채팅방 목록
   favoriteBoards: string[]; // 내가 고정(즐겨찾기)한 게시판 이름들
-  me: {nickname: string; school: string; region: string; gradYear?: string; role?: '회원' | '관리자'; verified?: boolean; schoolMethod?: string; regionVerified?: boolean; regionCity?: string; hideSchoolName?: boolean; hideRegionName?: boolean; avatar?: string; phone?: string; birth?: string; nicknameChangedAt?: string}; // 지금 로그인한 나 (nicknameChangedAt = 마지막 닉네임 변경 시각 ISO)
+  me: {nickname: string; school: string; region: string; gradYear?: string; role?: '회원' | '관리자'; verified?: boolean; schoolMethod?: string; regionVerified?: boolean; regionCity?: string; hideSchoolName?: boolean; hideRegionName?: boolean; avatar?: string; phone?: string; birth?: string; address?: string; nicknameChangedAt?: string}; // 지금 로그인한 나 (nicknameChangedAt = 마지막 닉네임 변경 시각 ISO)
   session: number | null; // 로그인한 회원 id (로그아웃 상태면 null)
 }
 
@@ -277,7 +278,8 @@ interface DataValue extends Store {
   // 로그인 / 로그아웃 / 회원가입 (실제 PostgreSQL 백엔드와 통신 → 비동기)
   login: (email: string, password: string) => Promise<string | null>; // 실패하면 에러 메시지, 성공하면 null
   logout: () => void;
-  signup: (u: {nickname: string; email: string; password: string; school: string; gradYear: string; region: string; phone: string; realName: string; birth: string}) => Promise<string | null>;
+  signup: (u: {nickname: string; email: string; password: string; school: string; gradYear: string; region: string; phone: string; realName: string; birth: string; address: string}) => Promise<string | null>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<string | null>; // 비밀번호 변경: 성공 null, 실패 메시지
   // 휴대폰 본인인증 (회원가입용 문자 OTP) — 본인인증으로 실명·생년월일도 함께 확인됩니다.
   sendOtp: (phone: string) => Promise<{ok: boolean; error?: string; devCode?: string}>; // 인증번호 보내기 (devCode = 개발용)
   verifyOtp: (phone: string, code: string, realName: string, birth: string) => Promise<string | null>; // 인증번호+신원 확인: 성공 null, 실패 메시지
@@ -945,6 +947,7 @@ export function DataProvider({children}: {children: ReactNode}) {
             phone: u.phone.trim(),
             realName: u.realName.trim(),
             birth: u.birth.trim(),
+            address: u.address.trim(),
           }),
         });
         const data = await res.json();
@@ -954,6 +957,22 @@ export function DataProvider({children}: {children: ReactNode}) {
         return null; // 성공
       } catch {
         return '서버에 연결할 수 없어요. 백엔드 서버를 켜 주세요. (터미널에서 npm run server)';
+      }
+    },
+    // 비밀번호 변경: 현재 비번 확인 후 새 비번으로 (관리자 포함 모든 회원)
+    changePassword: async (currentPassword, newPassword) => {
+      if (!store.session) return '로그인이 필요해요.';
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({userId: store.session, currentPassword, newPassword}),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error ?? '비밀번호 변경에 실패했어요.';
+        return null; // 성공
+      } catch {
+        return '서버에 연결할 수 없어요.';
       }
     },
     // 휴대폰 본인인증: 인증번호 보내기 (개발 중엔 devCode 로 번호를 돌려줘 테스트)

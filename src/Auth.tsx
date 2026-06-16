@@ -25,6 +25,7 @@ export function LoginScreen() {
   const [region, setRegion] = useState('');
   const [realName, setRealName] = useState(''); // 실명 (휴대폰 본인인증으로 확인)
   const [birth, setBirth] = useState(''); // 생년월일 (예: 1999-03-15)
+  const [address, setAddress] = useState(''); // 실거주지 주소 (○○동까지, 지역 인증 때 주민등록증과 대조)
 
   // 휴대폰 본인인증 상태
   const [phone, setPhone] = useState('');
@@ -48,10 +49,11 @@ export function LoginScreen() {
     if (!realName.trim()) return setError('실명을 입력해 주세요.');
     if (!birth.trim()) return setError('생년월일을 입력해 주세요.');
     if (!phoneVerified) return setError('휴대폰 본인인증을 완료해 주세요.');
-    if (!region) return setError('지역(시/도·권역)을 선택해 주세요.');
-    if (!school) return setError('졸업 학교를 선택해 주세요.');
+    if (!region) return setError('학교 권역(시/도·권역)을 선택해 주세요.');
+    if (!school) return setError('학교를 선택해 주세요.');
+    if (!address.trim()) return setError('실거주지 주소를 입력해 주세요. (동까지)');
     setBusy(true);
-    setError(await signup({nickname, email, password, school, gradYear, region, phone, realName, birth}));
+    setError(await signup({nickname, email, password, school, gradYear, region, phone, realName, birth, address}));
     setBusy(false);
   }
 
@@ -241,6 +243,18 @@ export function LoginScreen() {
               <Field label="졸업 연도">
                 <input className={inputClass} value={gradYear} onChange={(e) => setGradYear(e.target.value)} placeholder="예: 2022" />
               </Field>
+
+              {/* 실거주지 주소: 지역 인증(주민등록증) 때 관리자가 이 주소와 신분증을 대조합니다. */}
+              <p className="pt-1 text-xs font-medium text-gray-500">실거주지</p>
+              <Field label="거주지 주소">
+                <input
+                  className={inputClass}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="예: 경기도 수원시 영통구 매탄동 (동까지)"
+                />
+                <p className="mt-1 text-xs text-gray-400">📍 지역 인증 시 주민등록증 주소와 대조해요. 동(洞)까지 입력해 주세요.</p>
+              </Field>
             </>
           )}
 
@@ -259,6 +273,7 @@ export function LoginScreen() {
             changePhone(''); // 본인인증 상태 초기화
             setRealName('');
             setBirth('');
+            setAddress('');
           }}
           className="mt-4 w-full text-center text-sm text-gray-500"
         >

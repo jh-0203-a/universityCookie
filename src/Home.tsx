@@ -14,12 +14,19 @@ export function HomeScreen() {
     nav.push({name: 'postDetail', id: postId});
   }
 
-  // 인기 글: 좋아요 많은 순 상위 2개 (좋아요 0개는 제외)
-  const popular = [...posts].filter((p) => p.likes > 0).sort((a, b) => b.likes - a.likes).slice(0, 2);
+  // 학교별·지역별은 권역/거주지 제한 게시판이라, 그 게시판을 볼 수 없는 사람에겐
+  // 인기글/홈박스에 떠도 열 수 없는 "없는 글"이 됩니다. → 홈에서는 제외합니다.
+  const RESTRICTED_BOARDS = ['학교별', '지역별'];
 
-  // 홈에 보여줄 게시판: 기본 게시판(학교별은 권역 제한이라 제외) + 글이 있는 사용자 게시판
+  // 인기 글: (제한 게시판 제외) 좋아요 많은 순 상위 2개 (좋아요 0개는 제외)
+  const popular = [...posts]
+    .filter((p) => p.likes > 0 && !RESTRICTED_BOARDS.includes(p.boardType))
+    .sort((a, b) => b.likes - a.likes)
+    .slice(0, 2);
+
+  // 홈에 보여줄 게시판: 기본 게시판(제한 게시판 제외) + 글이 있는 사용자 게시판
   const homeBoards = [
-    ...DEFAULT_BOARDS.filter((b) => b !== '학교별'),
+    ...DEFAULT_BOARDS.filter((b) => !RESTRICTED_BOARDS.includes(b)),
     ...(boards ?? []).map((b) => b.name).filter((name) => posts.some((p) => p.boardType === name)),
   ];
 

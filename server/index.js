@@ -297,7 +297,7 @@ app.post('/api/reset-verification', async (req, res) => {
 
 // --- 회원가입 : POST /api/signup (휴대폰 본인인증 필수) ---
 app.post('/api/signup', async (req, res) => {
-  const {nickname, email, password, school, gradYear, region, phone, realName, birth} = req.body || {};
+  const {nickname, email, password, school, gradYear, region, phone, realName, birth, address} = req.body || {};
   if (!nickname || !email || !password) return res.status(400).json({error: '필수 정보를 입력해 주세요.'});
 
   // 본인인증을 마친 번호인지 확인
@@ -320,10 +320,10 @@ app.post('/api/signup', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10); // 비밀번호 해시
     const r = await pool.query(
-      `INSERT INTO users (nickname, email, password_hash, school, grad_year, region, phone, phone_verified, real_name, birth, role, verified, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,$8,$9,'회원',FALSE,'정상')
-       RETURNING id, nickname, email, school, grad_year, region, region_city, role, verified, school_method, region_verified, hide_school_name, hide_region_name, phone, birth, status`,
-      [nickname, email, hash, school || null, gradYear || null, region || null, ph, rn, bd],
+      `INSERT INTO users (nickname, email, password_hash, school, grad_year, region, phone, phone_verified, real_name, birth, address, role, verified, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,$8,$9,$10,'회원',FALSE,'정상')
+       RETURNING id, nickname, email, school, grad_year, region, region_city, role, verified, school_method, region_verified, hide_school_name, hide_region_name, phone, birth, address, status`,
+      [nickname, email, hash, school || null, gradYear || null, region || null, ph, rn, bd, String(address || '').trim() || null],
     );
     otpStore.delete(ph); // 사용한 인증정보 정리
     res.json({user: r.rows[0]});
@@ -352,6 +352,33 @@ app.post('/api/login', async (req, res) => {
 
     delete u.password_hash; // 해시는 절대 내려보내지 않음
     res.json({user: u});
+  } catch (e) {
+    res.status(500).json({error: String(e)});
+  }
+});
+
+// --- 비밀번호 변경 : POST /api/change-password ---
+//  - 모든 회원·관리자가 사용. 현재 비밀번호가 맞아야 새 비밀번호로 바꿉니다.
+//  - 시드(샘플) 계정은 password_hash 가 'TEST_HASH' 라 정해진 비번이 없으므로,
+//    현재 비번 확인 없이 새 비밀번호를 처음 설정할 수 있게 합니다. (관리자 비번 만들기)
+app.post('/api/change-password', async (req, res) => {
+  const {userId, currentPassword, newPassword} = req.body || {};
+  if (!userId) return res.status(400).json({error: '로그인이 필요해요.'});
+  if (!newPassword || String(newPassword).length < 4) {
+    return res.status(400).json({error: '새 비밀번호는 4자 이상으로 입력해 주세요.'});
+  }
+  try {
+    const r = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (r.rowCount === 0) return res.status(404).json({error: '회원을 찾을 수 없어요.'});
+    const hash = r.rows[0].password_hash;
+    // 실제 비번이 설정된 계정만 현재 비번을 확인합니다. (TEST_HASH = 아직 비번 미설정)
+    if (hash !== 'TEST_HASH') {
+      const ok = await bcrypt.compare(String(currentPassword || ''), hash || '');
+      if (!ok) return res.status(401).json({error: '현재 비밀번호가 일치하지 않아요.'});
+    }
+    const newHash = await bcrypt.hash(String(newPassword), 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
+    res.json({ok: true});
   } catch (e) {
     res.status(500).json({error: String(e)});
   }
@@ -1440,7 +1467,7 @@ app.get('/api/verifications', async (_req, res) => {
     const rows = (
       await pool.query(
         `SELECT v.*, u.nickname AS user_nick, u.school AS user_school, u.grad_year AS user_grad,
-                u.real_name AS user_real_name, u.birth AS user_birth
+                u.real_name AS user_real_name, u.birth AS user_birth, u.address AS user_address
          FROM verifications v JOIN users u ON u.id=v.user_id ORDER BY v.created_at DESC`,
       )
     ).rows;
@@ -1456,6 +1483,7 @@ app.get('/api/verifications', async (_req, res) => {
         // 본인인증으로 확인된 신원 (지역 인증 심사 때 주민등록증과 대조용)
         realName: v.user_real_name || undefined,
         birth: v.user_birth || undefined,
+        address: v.user_address || undefined, // 가입 때 입력한 실거주지 주소 (주민등록증 주소와 대조용)
         regionCity: v.region_city || undefined,
         cert: normUrl(v.cert_url),
         status: v.status,

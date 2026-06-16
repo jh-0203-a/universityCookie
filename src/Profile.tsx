@@ -141,7 +141,7 @@ export function ProfileScreen() {
 
 // ----- 프로필 수정 -----
 export function ProfileEdit() {
-  const {me, updateMe} = useStore();
+  const {me, updateMe, changePassword} = useStore();
   const nav = useNav();
   const [nickname, setNickname] = useState(me.nickname);
   const [school, setSchool] = useState(me.school);
@@ -151,6 +151,27 @@ export function ProfileEdit() {
   const [hideSchoolName, setHideSchoolName] = useState(me.hideSchoolName ?? false);
   const [hideRegionName, setHideRegionName] = useState(me.hideRegionName ?? false);
   const fileRef = useRef<HTMLInputElement>(null); // 숨겨둔 파일 선택 칸
+
+  // 비밀번호 변경 (현재 비번 확인 후 새 비번으로) — 모든 회원·관리자 사용
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+  const [pwMsg, setPwMsg] = useState<string | null>(null);
+  const [pwBusy, setPwBusy] = useState(false);
+
+  async function handleChangePassword() {
+    setPwMsg(null);
+    if (newPw.length < 4) return setPwMsg('새 비밀번호는 4자 이상이어야 해요.');
+    if (newPw !== newPw2) return setPwMsg('새 비밀번호가 서로 달라요.');
+    setPwBusy(true);
+    const err = await changePassword(curPw, newPw);
+    setPwBusy(false);
+    if (err) return setPwMsg(err);
+    setCurPw('');
+    setNewPw('');
+    setNewPw2('');
+    setPwMsg('✅ 비밀번호가 변경됐어요.');
+  }
 
   // 사진을 고르면 크기를 줄여(프로필은 작게) 화면에 미리 보여줍니다.
   async function handlePickImage(e: ChangeEvent<HTMLInputElement>) {
@@ -253,6 +274,54 @@ export function ProfileEdit() {
             <input type="checkbox" checked={hideRegionName} onChange={(e) => setHideRegionName(e.target.checked)} />
             지역명 숨기기 (📍 배지에서 지역 이름 감춤)
           </label>
+        </div>
+
+        {/* 비밀번호 변경: 현재 비번 확인 후 새 비번으로 (관리자 포함 모든 회원) */}
+        <div className="rounded-xl bg-white p-4 shadow-sm">
+          <p className="mb-2 text-sm font-medium text-gray-700">비밀번호 변경</p>
+          <div className="space-y-2">
+            <Field label="현재 비밀번호">
+              <input
+                className={inputClass}
+                type="password"
+                value={curPw}
+                onChange={(e) => setCurPw(e.target.value)}
+                placeholder="현재 비밀번호"
+              />
+            </Field>
+            <Field label="새 비밀번호">
+              <input
+                className={inputClass}
+                type="password"
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                placeholder="새 비밀번호 (4자 이상)"
+              />
+            </Field>
+            <Field label="새 비밀번호 확인">
+              <input
+                className={inputClass}
+                type="password"
+                value={newPw2}
+                onChange={(e) => setNewPw2(e.target.value)}
+                placeholder="새 비밀번호 다시 입력"
+              />
+            </Field>
+            {pwMsg && (
+              <p className={`text-sm ${pwMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{pwMsg}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleChangePassword}
+              disabled={pwBusy || !newPw || !newPw2}
+              className="w-full rounded-lg bg-gray-800 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              {pwBusy ? '변경 중...' : '비밀번호 변경'}
+            </button>
+            <p className="text-xs text-gray-400">
+              🔒 처음 비밀번호를 설정하는 계정(예: 초기 관리자)은 현재 비밀번호에 아무 값이나 넣어도 돼요.
+            </p>
+          </div>
         </div>
       </div>
     </Page>
@@ -606,13 +675,19 @@ export function AdminVerifications() {
                 </span>
               </div>
               {/* 심사 참고 정보 — 제출 서류의 이름/생년월일/졸업연도와 대조해 승인 판단 */}
-              {(v.realName || v.birth || (v.type === '대학' && v.gradYear)) && (
+              {(v.realName || v.birth || v.address || (v.type === '대학' && v.gradYear)) && (
                 <div className="mt-2 rounded-lg bg-blue-50 p-2 text-xs text-blue-800">
                   {/* 본인인증 실명 (+지역 인증이면 생년월일) */}
                   {v.realName && (
                     <p>
                       🪪 실명: <b>{v.realName}</b>
                       {v.type === '지역' && v.birth && <span> · 생년월일 {v.birth}</span>}
+                    </p>
+                  )}
+                  {/* 지역 인증이면 가입 때 입력한 실거주지 주소 (주민등록증 주소와 대조) */}
+                  {v.type === '지역' && v.address && (
+                    <p className={v.realName ? 'mt-0.5' : ''}>
+                      🏠 주소: <b>{v.address}</b>
                     </p>
                   )}
                   {/* 대학 인증이면 학교 + 졸업연도 (졸업증명서 대조용) */}
@@ -628,7 +703,7 @@ export function AdminVerifications() {
                   )}
                   <p className="mt-0.5 text-blue-500">
                     {v.type === '지역'
-                      ? '↳ 주민등록증의 실명·생년월일과 같은지 확인하세요.'
+                      ? '↳ 주민등록증의 실명·생년월일·주소와 같은지 확인하세요.'
                       : `↳ 제출 서류(${v.method})의 이름·졸업연도와 같은지 확인하세요.`}
                   </p>
                 </div>
