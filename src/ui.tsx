@@ -142,10 +142,6 @@ export function RegionSchoolPicker({
 
   return (
     <div className="space-y-3">
-      {/* 서비스 지역 안내: 현재 수도권만 오픈, 지방은 차츰 확대 예정 */}
-      <p className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700">
-        현재는 <b>서울·경기·인천</b>의 대학교만 서비스하고 있어요. 지방 지역은 차츰 열어갈 예정입니다.
-      </p>
       {lockRegion ? (
         // 거주 지역은 지역 인증으로 확인되는 정보라 여기서 직접 못 바꿉니다.
         <div>
