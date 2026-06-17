@@ -14,6 +14,7 @@ import {Field, PrimaryButton, RegionSchoolPicker, inputClass} from './ui';
 export function LoginScreen() {
   const {login, signup, sendOtp, verifyOtp} = useStore();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [step, setStep] = useState(0); // 회원가입 단계 (0:계정 1:본인확인 2:학교·지역)
   const [error, setError] = useState<string | null>(null);
 
   // 입력값들 (회원가입 때 더 많이 사용)
@@ -77,6 +78,22 @@ export function LoginScreen() {
     setError(null);
   }
 
+  // 다음 단계로 (현재 단계 입력만 검사하고 넘어감)
+  function next() {
+    setError(null);
+    if (step === 0) {
+      if (!nickname.trim()) return setError('닉네임을 입력해 주세요.');
+      if (!email.trim()) return setError('이메일을 입력해 주세요.');
+      if (!password.trim()) return setError('비밀번호를 입력해 주세요.');
+    }
+    if (step === 1) {
+      if (!realName.trim()) return setError('실명을 입력해 주세요.');
+      if (!birth.trim()) return setError('생년월일을 입력해 주세요.');
+      if (!phoneVerified) return setError('휴대폰 본인인증을 완료해 주세요.');
+    }
+    setStep(step + 1);
+  }
+
   // 휴대폰 번호를 고치면 인증을 처음부터 다시
   function changePhone(v: string) {
     setPhone(v);
@@ -118,35 +135,60 @@ export function LoginScreen() {
           <p className="mt-0.5 text-xs text-gray-400">모임·스터디·중고거래·커뮤니티 · 대학🎓/지역📍 인증 배지</p>
         </div>
 
+        {/* 테스트(베타) 단계 안내 */}
+        <div className="mb-4 rounded-xl bg-yellow-50 px-3 py-2 text-center text-xs text-yellow-800">
+          🚧 현재 <b>테스트 단계</b>예요. 일부 기능이 바뀌거나 데이터가 초기화될 수 있어요.
+        </div>
+
         <div className="space-y-3">
+          {/* 회원가입 단계 표시기 (3단계) */}
           {mode === 'signup' && (
-            <Field label="닉네임">
-              <input className={inputClass} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="동문들에게 보일 이름" />
-            </Field>
+            <div className="mb-1">
+              <div className="flex gap-1.5">
+                {['계정', '본인 확인', '학교·지역'].map((t, i) => (
+                  <div key={t} className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-orange-500' : 'bg-gray-200'}`} />
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs font-medium text-gray-500">
+                {step + 1}/3 단계 · {['계정', '본인 확인', '학교·지역'][step]}
+              </p>
+            </div>
           )}
 
-          <Field label="이메일">
-            <input
-              className={inputClass}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (mode === 'login' ? handleLogin() : handleSignup())}
-              placeholder="이메일 (gmail 등 무엇이든 OK)"
-            />
-          </Field>
+          {/* 1단계(계정): 닉네임·이메일·비밀번호 / 로그인은 이메일·비밀번호만 */}
+          {(mode === 'login' || step === 0) && (
+            <>
+              {mode === 'signup' && (
+                <Field label="닉네임">
+                  <input className={inputClass} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="동네 이웃들에게 보일 이름" />
+                </Field>
+              )}
 
-          <Field label="비밀번호">
-            <input
-              className={inputClass}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (mode === 'login' ? handleLogin() : handleSignup())}
-              placeholder="비밀번호"
-            />
-          </Field>
+              <Field label="이메일">
+                <input
+                  className={inputClass}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (mode === 'login' ? handleLogin() : next())}
+                  placeholder="이메일 (gmail 등 무엇이든 OK)"
+                />
+              </Field>
 
-          {mode === 'signup' && (
+              <Field label="비밀번호">
+                <input
+                  className={inputClass}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (mode === 'login' ? handleLogin() : next())}
+                  placeholder="비밀번호"
+                />
+              </Field>
+            </>
+          )}
+
+          {/* 2단계(본인 확인): 실명·생년월일·휴대폰 인증 */}
+          {mode === 'signup' && step === 1 && (
             <>
               {/* 본인 확인: 실명 + 생년월일 + 휴대폰 인증 (PASS처럼 한 번에 신원을 확인) */}
               <p className="pt-1 text-xs font-medium text-gray-500">본인 확인 (휴대폰 인증으로 실명·생년월일을 확인해요)</p>
@@ -230,7 +272,12 @@ export function LoginScreen() {
                   ✅ 본인인증 완료 — {realName} · {birth}
                 </p>
               )}
+            </>
+          )}
 
+          {/* 3단계(학교·지역): 학교 권역·학교·졸업연도·실거주지 */}
+          {mode === 'signup' && step === 2 && (
+            <>
               {/* 시/도 → 권역 → 학교 를 순서대로 골라요 (직접 입력 X → 데이터 깔끔) */}
               <RegionSchoolPicker
                 region={region}
@@ -260,15 +307,42 @@ export function LoginScreen() {
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <PrimaryButton full disabled={busy || (mode === 'signup' && !phoneVerified)} onClick={mode === 'login' ? handleLogin : handleSignup}>
-            {busy ? '잠시만요...' : mode === 'login' ? '로그인' : '회원가입'}
-          </PrimaryButton>
+          {mode === 'login' ? (
+            <PrimaryButton full disabled={busy} onClick={handleLogin}>
+              {busy ? '잠시만요...' : '로그인'}
+            </PrimaryButton>
+          ) : (
+            <div className="flex gap-2">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStep(step - 1);
+                  }}
+                  className="flex-none rounded-xl border border-gray-300 px-5 text-sm font-medium text-gray-600"
+                >
+                  이전
+                </button>
+              )}
+              {step < 2 ? (
+                <PrimaryButton full onClick={next}>
+                  다음
+                </PrimaryButton>
+              ) : (
+                <PrimaryButton full disabled={busy || !phoneVerified} onClick={handleSignup}>
+                  {busy ? '잠시만요...' : '회원가입'}
+                </PrimaryButton>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 로그인 ↔ 회원가입 전환 */}
         <button
           onClick={() => {
             setMode(mode === 'login' ? 'signup' : 'login');
+            setStep(0); // 단계 처음으로
             setError(null);
             changePhone(''); // 본인인증 상태 초기화
             setRealName('');

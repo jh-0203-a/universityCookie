@@ -241,7 +241,7 @@ function AppInner() {
   return (
     <NavContext.Provider value={nav}>
       {/* 넓은 화면에서는 [사이드바 + 본문], 좁은 화면(폰/앱)에서는 본문만 (사이드바 hidden) */}
-      <div className="mx-auto flex h-full w-full max-w-md bg-gray-100 md:max-w-5xl">
+      <div className="flex h-full w-full bg-gray-100">
         <DesktopSidebar
           tab={tab}
           onTab={nav.goTab}
@@ -269,7 +269,7 @@ function AppInner() {
               </div>
               {/* 본문 — 웹에서는 너무 넓지 않게 가운데로 모음 */}
               <main className="flex-1 overflow-y-auto pb-2">
-                <div className="md:mx-auto md:max-w-2xl">{renderTab(tab)}</div>
+                <div className="md:px-6">{renderTab(tab)}</div>
               </main>
 
               {/* 글쓰기/등록 + 버튼 */}

@@ -27,7 +27,10 @@
       "Bash(echo \"exit: $?\")",
       "Bash(tail -30 /tmp/cookie_server.log)",
       "Bash(grep -v \"^$\")",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" add -A)",
+      "Bash('/c/Program Files/Git/cmd/git.exe' commit -m ' *)",
+      "Bash(\"/c/Program Files/Git/cmd/git.exe\" log --oneline -1)"
     ]
   }
 }

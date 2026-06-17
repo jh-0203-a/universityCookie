@@ -32,28 +32,28 @@ export function HomeScreen() {
 
   return (
     <div className="space-y-3 p-4">
-      {/* 청년 생활 플랫폼 정체성 배너 */}
-      <div className="rounded-xl bg-orange-500 p-4 text-white">
-        <p className="text-base font-bold">🌱 우리 동네 청년 생활 플랫폼</p>
-        <p className="mt-0.5 text-sm text-orange-50">20·30 청년들의 모임·중고거래·스터디, 한 곳에서</p>
+      {/* 상단: 배너 + 캐릭터를 넓은 화면에선 가로로 나란히 (좌우 폭 채우기) */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="flex flex-col justify-center rounded-2xl bg-orange-500 p-5 text-white">
+          <p className="text-lg font-bold">🌱 우리 동네 청년 생활 플랫폼</p>
+          <p className="mt-1 text-sm text-orange-50">20·30 청년들의 모임·중고거래·스터디, 한 곳에서</p>
+        </div>
+        <WelcomeBuddy />
       </div>
 
-      {/* 손 흔들며 환영하는 귀여운 청년 캐릭터 */}
-      <WelcomeBuddy />
-
-      {/* 인기 글 모아보기 */}
+      {/* 인기 글 모아보기 — 가로로 긴 카드들 */}
       {popular.length > 0 && (
-        <div className="rounded-xl bg-white p-4 shadow-sm">
-          <p className="mb-2 text-sm font-bold text-gray-900">🔥 인기 글</p>
-          <div className="space-y-2">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <p className="mb-2.5 text-sm font-bold text-gray-900">🔥 인기 글</p>
+          <div className="grid gap-2 sm:grid-cols-2">
             {popular.map((post) => (
               <button
                 key={post.id}
                 onClick={() => openPost(post.id)}
-                className="flex w-full items-center gap-2 text-left active:opacity-70"
+                className="flex items-center gap-2 rounded-xl bg-orange-50 px-3 py-2.5 text-left transition hover:bg-orange-100 active:opacity-70"
               >
-                <span className="rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-600">{post.boardType}</span>
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-800">{post.title}</span>
+                <span className="flex-none rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-600">{post.boardType}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">{post.title}</span>
                 <span className="flex-none text-xs text-orange-500">♥ {post.likes}</span>
               </button>
             ))}
@@ -61,31 +61,34 @@ export function HomeScreen() {
         </div>
       )}
 
-      {/* 게시판별 박스: 각 게시판 최근 글 3개 제목 */}
-      {homeBoards.map((board) => {
-        const recent = posts.filter((p) => p.boardType === board).slice(0, 3); // DB가 최신순이라 앞 3개 = 최근
-        return (
-          <div key={board} className="rounded-xl bg-white p-4 shadow-sm">
-            <p className="mb-2 text-sm font-bold text-gray-900">📋 {board} 게시판</p>
-            {recent.length === 0 ? (
-              <p className="text-sm text-gray-400">아직 글이 없어요.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {recent.map((post) => (
-                  <button
-                    key={post.id}
-                    onClick={() => openPost(post.id)}
-                    className="flex w-full items-center gap-2 text-left active:opacity-70"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm text-gray-800">{post.title}</span>
-                    <span className="flex-none text-xs text-gray-400">💬 {post.comments.length}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {/* 게시판별 박스: 넓은 화면에선 2~3칸 그리드로 좌우를 꽉 채움 */}
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {homeBoards.map((board) => {
+          const recent = posts.filter((p) => p.boardType === board).slice(0, 4); // DB가 최신순이라 앞 4개 = 최근
+          return (
+            <div key={board} className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="mb-2.5 text-sm font-bold text-gray-900">📋 {board} 게시판</p>
+              {recent.length === 0 ? (
+                <p className="text-sm text-gray-400">아직 글이 없어요.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {recent.map((post) => (
+                    <button
+                      key={post.id}
+                      onClick={() => openPost(post.id)}
+                      className="flex w-full items-center gap-2 rounded-lg px-1 py-1 text-left hover:bg-gray-50 active:opacity-70"
+                    >
+                      <span className="text-orange-300">·</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-gray-800">{post.title}</span>
+                      <span className="flex-none text-xs text-gray-400">💬 {post.comments.length}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
